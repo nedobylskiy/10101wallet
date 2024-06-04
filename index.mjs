@@ -1,5 +1,6 @@
 import {Web3} from "web3";
 import Keystorage from "./modules/Keystorage.mjs";
+import {createConnector} from "@wagmi/core";
 
 class EmbeddedWallet {
     currentAccount = null;
@@ -85,3 +86,45 @@ class EmbeddedWallet {
 }
 
 export default EmbeddedWallet;
+
+
+export function embedded10101WalletConnector({
+    chains,
+    options
+                                             }){
+    let wallet = new EmbeddedWallet(options);
+
+    let id = 'embedded10101';
+    let name = 'Embedded 10101';
+    let type = 'wallet';
+
+    return createConnector((config) => ({
+        id,
+        name,
+        type,
+        //getProvider,
+        getProvider: async function () {
+            console.log('getProvider');
+        },
+        connect: async function () {
+            console.log('connect');
+        },
+        getAccounts: async function () {
+            console.log('getAccounts');
+        },
+        signTransaction: async function () {},
+        onConnect: async function () {
+            console.log('onConnect');
+        },
+        disconnect: async function () {},
+        isAuthorized: async function () {
+            console.log('isAuthorized');
+        },
+        onDisconnect: async function () {},
+        getChainId: async function () {
+            console.log('getChainId');
+        },
+        onAccountsChanged: async function () {},
+
+    }))
+}
