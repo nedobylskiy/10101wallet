@@ -92,6 +92,10 @@ class EmbeddedWallet {
         });
     }
 
+    async signMessage(){
+        console.log('signMessage', arguments);
+    }
+
    //TODO univeersal getter
 }
 
