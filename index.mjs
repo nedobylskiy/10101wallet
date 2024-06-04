@@ -91,6 +91,8 @@ class EmbeddedWallet {
             value: value
         });
     }
+
+   //TODO univeersal getter
 }
 
 export default EmbeddedWallet;
@@ -109,14 +111,14 @@ export function embedded10101WalletConnector({
 
     //Make proxy for wallet for logging every call
 
-   /* let walletProxy = new Proxy(wallet, {
+    let walletProxy = new Proxy(wallet, {
         get: function(target, prop, receiver) {
-            console.log(`PROXY: Getting property ${prop}`, arguments);
-            return Reflect.get(...arguments);
-        }
+            console.log(`Proxy: GET ${prop}`);
+            return target[prop];
+        },
     });
 
-    wallet = walletProxy;*/
+    wallet = walletProxy;
 
 
     return createConnector((config) => ({
