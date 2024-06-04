@@ -103,9 +103,9 @@ class EmbeddedWallet {
      * @param params
      * @returns {Promise<*>}
      */
-    async request(method, params){
+    async request(rpc){
         console.log('request', arguments);
-        return await this[method](...params);
+        return await this[rpc.method](...rpc.params);
     }
 
 
