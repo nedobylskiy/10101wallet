@@ -107,6 +107,18 @@ export function embedded10101WalletConnector({
     let type = 'wallet';
     let chainId = 1;
 
+    //Make proxy for wallet for logging every call
+
+    let walletProxy = new Proxy(wallet, {
+        get: function(target, prop, receiver) {
+            console.log(`PROXY: Getting property ${prop}`, arguments);
+            return Reflect.get(...arguments);
+        }
+    });
+
+    wallet = walletProxy;
+
+
     return createConnector((config) => ({
         id,
         name,
