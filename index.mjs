@@ -96,6 +96,10 @@ class EmbeddedWallet {
         console.log('signMessage', arguments);
     }
 
+    async request(){
+        console.log('request', arguments);
+    }
+
    //TODO univeersal getter
 }
 
