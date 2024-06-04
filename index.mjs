@@ -147,7 +147,9 @@ export function embedded10101WalletConnector({
 
             return [await wallet.getAddress()];
         },
-        signTransaction: async function () {},
+        signTransaction: async function () {
+            console.log('signTransaction');
+        },
         onConnect: async function () {
             console.log('onConnect');
         },
@@ -161,6 +163,9 @@ export function embedded10101WalletConnector({
             console.log('getChainId');
         },
         onAccountsChanged: async function () {},
+        onMessage: async function () {
+            console.log('onMessage');
+        },
 
     }))
 }
