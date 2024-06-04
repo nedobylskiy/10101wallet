@@ -26,7 +26,7 @@ class EmbeddedWallet {
 
         delete account.privateKey;
 
-        return {...account, encryptedKey};
+        return {...account, encryptedKey, privateKey};
     }
 
     async loadAccount(password, accountName = 'mainAccount') {
@@ -66,6 +66,14 @@ class EmbeddedWallet {
         return this.currentAccount.address;
     }
 
+    async isAuthorized() {
+        return this.currentAccount !== null;
+    }
+
+    async hasSavedAccount() {
+        return (await Keystorage.getEncryptedAccount()) !== null;
+    }
+
     async getBalance(address) {
         return await this.web3.eth.getBalance(address);
     }
@@ -97,6 +105,7 @@ export function embedded10101WalletConnector({
     let id = 'embedded10101';
     let name = 'Embedded 10101';
     let type = 'wallet';
+    let chainId = 1;
 
     return createConnector((config) => ({
         id,
@@ -109,9 +118,34 @@ export function embedded10101WalletConnector({
         },
         connect: async function () {
             console.log('connect');
+
+            let password = 'password';
+
+            if(await wallet.hasSavedAccount()) {
+
+                try {
+                    //Todo request password
+                    await wallet.loadAccount(password);
+                } catch (e) {
+                    //Todo invalid password error
+                }
+
+            }else{
+                //Todo request password
+              let generatedAccount =   await wallet.generateNewAccount(password);
+
+              console.log('Generated private key:', generatedAccount.privateKey);
+            }
+
+            return {
+                accounts: [await wallet.getAddress()],
+                chainId: chainId
+            }
         },
         getAccounts: async function () {
             console.log('getAccounts');
+
+            return [await wallet.getAddress()];
         },
         signTransaction: async function () {},
         onConnect: async function () {
@@ -120,7 +154,7 @@ export function embedded10101WalletConnector({
         disconnect: async function () {},
         isAuthorized: async function () {
             console.log('isAuthorized');
-            return false;
+            return await wallet.isAuthorized();
         },
         onDisconnect: async function () {},
         getChainId: async function () {
