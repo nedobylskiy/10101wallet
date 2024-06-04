@@ -105,6 +105,7 @@ export function embedded10101WalletConnector({
         //getProvider,
         getProvider: async function () {
             console.log('getProvider');
+            return wallet;
         },
         connect: async function () {
             console.log('connect');
