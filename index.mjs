@@ -111,14 +111,14 @@ export function embedded10101WalletConnector({
 
     //Make proxy for wallet for logging every call
 
-    let walletProxy = new Proxy(wallet, {
+    /*let walletProxy = new Proxy(wallet, {
         get: function(target, prop, receiver) {
             console.log(`Proxy: GET ${prop}`);
             return target[prop];
         },
     });
 
-    wallet = walletProxy;
+    wallet = walletProxy;*/
 
 
     return createConnector((config) => ({
@@ -143,6 +143,7 @@ export function embedded10101WalletConnector({
                 } catch (e) {
                     //Todo invalid password error
                     console.error('Invalid password', e);
+                    throw e;
                 }
 
             }else{
