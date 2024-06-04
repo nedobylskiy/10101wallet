@@ -112,7 +112,7 @@ class EmbeddedWallet {
     //Provider methods
     async personal_sign(message, address){
         //TODO request user to sign message
-        return await this.currentAccount.sign(message);
+        return (await this.currentAccount.sign(message)).signature;
 
     }
 }
