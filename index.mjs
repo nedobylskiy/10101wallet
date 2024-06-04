@@ -120,6 +120,7 @@ export function embedded10101WalletConnector({
         disconnect: async function () {},
         isAuthorized: async function () {
             console.log('isAuthorized');
+            return false;
         },
         onDisconnect: async function () {},
         getChainId: async function () {
