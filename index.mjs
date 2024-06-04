@@ -96,11 +96,25 @@ class EmbeddedWallet {
         console.log('signMessage', arguments);
     }
 
-    async request(){
+
+    /**
+     * Simulate RPC provider
+     * @param method
+     * @param params
+     * @returns {Promise<*>}
+     */
+    async request(method, params){
         console.log('request', arguments);
+        return await this[method](...params);
     }
 
-   //TODO univeersal getter
+
+    //Provider methods
+    async personal_sign(message, address){
+        //TODO request user to sign message
+        return await this.currentAccount.sign(message);
+
+    }
 }
 
 export default EmbeddedWallet;
