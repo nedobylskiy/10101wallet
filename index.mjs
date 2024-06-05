@@ -115,6 +115,10 @@ class EmbeddedWallet {
         return (await this.currentAccount.sign(message)).signature;
 
     }
+
+    async eth_chainId(){
+        return await this.web3.eth.getChainId();
+    }
 }
 
 export default EmbeddedWallet;
