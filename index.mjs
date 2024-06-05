@@ -105,6 +105,9 @@ class EmbeddedWallet {
      */
     async request(rpc){
         console.log('request', arguments);
+        if(!rpc.params){
+            rpc.params = [];
+        }
         return await this[rpc.method](...rpc.params);
     }
 
