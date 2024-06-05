@@ -204,6 +204,9 @@ export function embedded10101WalletConnector({
         onMessage: async function () {
             console.log('onMessage');
         },
+        switchChain: async function () {
+            console.log('switchChain', arguments);
+        }
 
     }))
 }
