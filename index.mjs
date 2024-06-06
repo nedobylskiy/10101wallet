@@ -133,7 +133,7 @@ class EmbeddedWallet {
 
         console.log('SEND TX', signedTx, sendedTx);
 
-        return sendedTx;
+        return sendedTx.transactionHash;
 
     }
 }
