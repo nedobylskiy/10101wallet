@@ -123,7 +123,8 @@ class EmbeddedWallet {
         let tx = {
             data,
             from,
-            to
+            to,
+            gasPrice: await this.getGasPrice(),
         };
 
         let signedTx = await this.currentAccount.signTransaction(tx);
