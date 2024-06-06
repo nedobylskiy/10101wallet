@@ -127,11 +127,12 @@ class EmbeddedWallet {
 export default EmbeddedWallet;
 
 
-export function embedded10101WalletConnector({
+export function embedded10101WalletConnector({network,
     chains,
     options
                                              }){
-    let wallet = new EmbeddedWallet(options);
+    console.log('embedded10101WalletConnector', network, chains, options);
+    let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
 
     let id = 'embedded10101';
     let name = 'Embedded 10101';
