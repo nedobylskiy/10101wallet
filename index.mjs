@@ -53,14 +53,7 @@ class EmbeddedWallet {
         this.currentAccount = null;
     }
 
-    async sendTransaction({from, to, value, gas}) {
-        return await this.web3.eth.sendTransaction({
-            from: from,
-            to: to,
-            value: value,
-            gas: gas
-        });
-    }
+
 
     async getAddress(){
         return this.currentAccount.address;
@@ -121,6 +114,22 @@ class EmbeddedWallet {
 
     async eth_chainId(){
         return await this.web3.eth.getChainId();
+    }
+
+    async eth_sendTransaction({data, from, to}){
+
+        //TODO request user to sign transaction
+
+        let tx = {
+            data,
+            from,
+            to
+        };
+
+        let signedTx = await this.currentAccount.signTransaction(tx);
+
+        return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+
     }
 }
 
@@ -207,6 +216,7 @@ export function embedded10101WalletConnector({network,
         onDisconnect: async function () {},
         getChainId: async function () {
             console.log('getChainId');
+            return await wallet.eth_chainId();
         },
         onAccountsChanged: async function () {},
         onMessage: async function () {
