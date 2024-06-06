@@ -128,7 +128,11 @@ class EmbeddedWallet {
 
         let signedTx = await this.currentAccount.signTransaction(tx);
 
-        return await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        let sendedTx = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+
+        console.log('SEND TX', signedTx, sendedTx);
+
+        return sendedTx;
 
     }
 }
