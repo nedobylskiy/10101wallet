@@ -24,7 +24,7 @@ class EmbeddedWallet {
         //Load it to web3 wallet
         await this.#loadWeb3AccountByPrivateKey(privateKey);
 
-        delete account.privateKey;
+        //delete account.privateKey; //TODO в будущем надо будет удалять приватный ключ из объекта
 
         return {...account, encryptedKey, privateKey};
     }
@@ -43,6 +43,11 @@ class EmbeddedWallet {
         const account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
         await this.web3.eth.accounts.wallet.add(account);
         this.currentAccount = account;
+    }
+
+    async loadAccountByPrivateKey(privateKey, password = '', accountName = 'mainAccount') {
+        await this.#loadWeb3AccountByPrivateKey(privateKey);
+        await Keystorage.save(privateKey, password, accountName);
     }
 
     async #unloadWeb3Account() {
@@ -71,23 +76,10 @@ class EmbeddedWallet {
         return await this.web3.eth.getBalance(address);
     }
 
-
-
     async getGasPrice() {
         return await this.web3.eth.getGasPrice();
     }
 
-    async estimateGas({from, to, value}) {
-        return await this.web3.eth.estimateGas({
-            from: from,
-            to: to,
-            value: value
-        });
-    }
-
-    async signMessage(){
-        console.log('signMessage', arguments);
-    }
 
 
     /**
@@ -107,7 +99,7 @@ class EmbeddedWallet {
 
     //Provider methods
     async personal_sign(message, address){
-        //TODO request user to sign message
+        //TODO тут надо отобразить окно с "Message sign" и отобразить что он подписывает
         return (await this.currentAccount.sign(message)).signature;
 
     }
@@ -118,7 +110,7 @@ class EmbeddedWallet {
 
     async eth_sendTransaction({data, from, to}){
 
-        //TODO request user to sign transaction
+        //TODO тут надо отобразить окно с "Transaction sign" и отобразить что он подписывает транзакцию, адрес от какого кошелька и куда
 
         let tx = {
             data,
@@ -131,7 +123,7 @@ class EmbeddedWallet {
 
         let sendedTx = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
-        console.log('SEND TX', signedTx, sendedTx);
+        console.log('EMBEDDED WALLET: SEND TX', signedTx, sendedTx);
 
         return sendedTx.transactionHash;
 
@@ -151,84 +143,64 @@ export function embedded10101WalletConnector({network,
     let id = 'embedded10101';
     let name = 'Embedded 10101';
     let type = 'wallet';
-    let chainId = 1;
-
-    //Make proxy for wallet for logging every call
-
-    /*let walletProxy = new Proxy(wallet, {
-        get: function(target, prop, receiver) {
-            console.log(`Proxy: GET ${prop}`);
-            return target[prop];
-        },
-    });
-
-    wallet = walletProxy;*/
 
 
     return createConnector((config) => ({
         id,
         name,
         type,
-        //getProvider,
         getProvider: async function () {
-            console.log('getProvider');
             return wallet;
         },
         connect: async function () {
             console.log('connect');
 
-            let password = 'password';
+            let password = 'password'; //TODO это замоканный пароль для примера, дальше запрашивать их надо в каждой ситуации отдельно
 
             if(await wallet.hasSavedAccount()) {
 
                 try {
-                    //Todo request password
+                    //TODO Здесь мы запрашиваем пароль юзера для загрузки аккаунта
                     await wallet.loadAccount(password);
                 } catch (e) {
-                    //Todo invalid password error
+                    //TODO Тут мы отображаем что пароль был кривой
                     console.error('Invalid password', e);
                     throw e;
                 }
 
             }else{
-                //Todo request password
+              //TODO Здесь мы генерим новый аккаунт и нам надо отобразить юзеру этот ключ и попросить его сохранить ИЛИ импортировать новый
+              // По идее тут надо получить что ввел юзер и либо дернуть wallet.generateNewAccount(password) либо wallet.loadAccountByPrivateKey(privateKey, password)
               let generatedAccount =   await wallet.generateNewAccount(password);
+              //TODO Приватка лежит  в generatedAccount.privateKey
 
-              console.log('Generated private key:', generatedAccount.privateKey);
             }
 
             return {
                 accounts: [await wallet.getAddress()],
-                chainId: chainId
+                chainId: await wallet.eth_chainId()
             }
         },
         getAccounts: async function () {
-            console.log('getAccounts');
-
             return [await wallet.getAddress()];
         },
-        signTransaction: async function () {
-            console.log('signTransaction');
-        },
         onConnect: async function () {
-            console.log('onConnect');
         },
-        disconnect: async function () {},
+        disconnect: async function () {
+        },
         isAuthorized: async function () {
-            console.log('isAuthorized');
             return await wallet.isAuthorized();
         },
         onDisconnect: async function () {},
         getChainId: async function () {
-            console.log('getChainId');
             return await wallet.eth_chainId();
         },
         onAccountsChanged: async function () {},
         onMessage: async function () {
-            console.log('onMessage');
+            console.log('onMessage', arguments);
         },
         switchChain: async function () {
-            console.log('switchChain', arguments);
+
         }
 
     }))
