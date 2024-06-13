@@ -1,11 +1,13 @@
 import {Web3} from "web3";
 import Keystorage from "./modules/Keystorage.mjs";
 import {createConnector} from "@wagmi/core";
+import EventEmitter from 'events';
 
-class EmbeddedWallet {
+class EmbeddedWallet extends EventEmitter {
     currentAccount = null;
 
     constructor(urlOrProvider) {
+        super();
         this.web3 = new Web3(urlOrProvider);
     }
 
@@ -99,9 +101,21 @@ class EmbeddedWallet {
 
     //Provider methods
     async personal_sign(message, address){
-        //TODO тут надо отобразить окно с "Message sign" и отобразить что он подписывает
-        return (await this.currentAccount.sign(message)).signature;
+        this.emit('personal_sign_request', { message, address });
 
+        try {
+            await new Promise((resolve, reject) => {
+                this.once('personal_sign_approved', resolve);
+                this.once('personal_sign_rejected', () => {
+                    reject(new Error('User rejected the sign request.'));
+                });
+            });
+
+            return (await this.currentAccount.sign(message)).signature;
+        } catch (error) {
+            console.error('Error during personal sign:', error);
+            throw error;
+        }
     }
 
     async eth_chainId(){
@@ -109,24 +123,24 @@ class EmbeddedWallet {
     }
 
     async eth_sendTransaction({data, from, to}){
+        this.emit('eth_sendTransaction_request', { data, from, to });
 
-        //TODO тут надо отобразить окно с "Transaction sign" и отобразить что он подписывает транзакцию, адрес от какого кошелька и куда
+        try {
+            const tx = await new Promise((resolve, reject) => {
+                this.once('eth_sendTransaction_approved', resolve);
+                this.once('eth_sendTransaction_rejected', () => {
+                    reject(new Error('User rejected the transaction request.'));
+                });
+            });
 
-        let tx = {
-            data,
-            from,
-            to,
-            gasPrice: await this.getGasPrice(),
-        };
+            let signedTx = await this.currentAccount.signTransaction({ ...tx, gasPrice: await this.getGasPrice() });
+            let sendedTx = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
-        let signedTx = await this.currentAccount.signTransaction(tx);
-
-        let sendedTx = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-
-        console.log('EMBEDDED WALLET: SEND TX', signedTx, sendedTx);
-
-        return sendedTx.transactionHash;
-
+            return sendedTx.transactionHash;
+        } catch (error) {
+            console.error('Error during transaction send:', error);
+            throw error;
+        }
     }
 }
 
@@ -155,31 +169,57 @@ export function embedded10101WalletConnector({network,
         connect: async function () {
             console.log('connect');
 
-            let password = 'password'; //TODO это замоканный пароль для примера, дальше запрашивать их надо в каждой ситуации отдельно
 
-            if(await wallet.hasSavedAccount()) {
+      try {
+        if (await wallet.hasSavedAccount()) {
+        // Запрос пароля у пользователя
+        wallet.emit('password_request');
 
-                try {
-                    //TODO Здесь мы запрашиваем пароль юзера для загрузки аккаунта
-                    await wallet.loadAccount(password);
-                } catch (e) {
-                    //TODO Тут мы отображаем что пароль был кривой
-                    console.error('Invalid password', e);
-                    throw e;
-                }
+        const password = await new Promise((resolve, reject) => {
+          wallet.once('password_provided', resolve);
+          wallet.once('password_rejected', () => {
+            reject(new Error('User rejected the password request.'));
+          });
+        });
 
-            }else{
-              //TODO Здесь мы генерим новый аккаунт и нам надо отобразить юзеру этот ключ и попросить его сохранить ИЛИ импортировать новый
-              // По идее тут надо получить что ввел юзер и либо дернуть wallet.generateNewAccount(password) либо wallet.loadAccountByPrivateKey(privateKey, password)
-              let generatedAccount =   await wallet.generateNewAccount(password);
-              //TODO Приватка лежит  в generatedAccount.privateKey
+          try {
+            // Загрузка аккаунта с запросом пароля у пользователя
+            await wallet.loadAccount(password);
+          } catch (e) {
+            console.error('Invalid password', e);
+            throw e;
+          }
+        } else {
+          // Запрос действия у пользователя (генерация нового аккаунта или импорт существующего)
+          wallet.emit('account_action_request');
 
-            }
+          const { action, privateKey, password } = await new Promise((resolve, reject) => {
+            wallet.once('account_action_provided', resolve);
+            wallet.once('account_action_rejected', () => {
+              reject(new Error('User rejected the account action request.'));
+            });
+          });
 
-            return {
-                accounts: [await wallet.getAddress()],
-                chainId: await wallet.eth_chainId()
-            }
+          if (action === 'generate') {
+            const generatedAccount = await wallet.generateNewAccount(password);
+            // Сообщение пользователю о сохранении приватного ключа
+            wallet.emit('private_key_provided', generatedAccount.privateKey);
+          } else if (action === 'import') {
+            await wallet.loadAccountByPrivateKey(privateKey, password);
+          } else {
+            throw new Error("Invalid action. Please provide 'generate' or 'import'.");
+          }
+        }
+
+        return {
+          accounts: [await wallet.getAddress()],
+          chainId: await wallet.eth_chainId()
+        };
+
+      } catch (e) {
+        console.error('Error during connect', e);
+        throw e;
+      }
         },
         getAccounts: async function () {
             return [await wallet.getAddress()];
