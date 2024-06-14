@@ -79,10 +79,9 @@ class EmbeddedWallet extends EventEmitter {
     }
 
     async getGasPrice() {
-        return await this.web3.eth.getGasPrice();
+        const gasPrice = await this.web3.eth.getGasPrice();
+        return this.web3.utils.toWei((parseFloat(this.web3.utils.fromWei(gasPrice, 'gwei')) * 1.5).toString(), 'gwei');
     }
-
-
 
     /**
      * Simulate RPC provider
@@ -134,9 +133,9 @@ class EmbeddedWallet extends EventEmitter {
             });
 
             let signedTx = await this.currentAccount.signTransaction({ ...tx, gasPrice: await this.getGasPrice() });
-            let sendedTx = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+            this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
-            return sendedTx.transactionHash;
+            return signedTx.transactionHash;
         } catch (error) {
             console.error('Error during transaction send:', error);
             throw error;
@@ -152,6 +151,7 @@ export function embedded10101WalletConnector({network,
     options
                                              }){
     console.log('embedded10101WalletConnector', network, chains, options);
+    console.log(network.rpcUrls.default.http);
     let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
 
     let id = 'embedded10101';
@@ -172,7 +172,6 @@ export function embedded10101WalletConnector({network,
 
       try {
         if (await wallet.hasSavedAccount()) {
-        // Запрос пароля у пользователя
         wallet.emit('password_request');
 
         const password = await new Promise((resolve, reject) => {
@@ -183,14 +182,12 @@ export function embedded10101WalletConnector({network,
         });
 
           try {
-            // Загрузка аккаунта с запросом пароля у пользователя
             await wallet.loadAccount(password);
           } catch (e) {
             console.error('Invalid password', e);
             throw e;
           }
         } else {
-          // Запрос действия у пользователя (генерация нового аккаунта или импорт существующего)
           wallet.emit('account_action_request');
 
           const { action, privateKey, password } = await new Promise((resolve, reject) => {
@@ -202,7 +199,6 @@ export function embedded10101WalletConnector({network,
 
           if (action === 'generate') {
             const generatedAccount = await wallet.generateNewAccount(password);
-            // Сообщение пользователю о сохранении приватного ключа
             wallet.emit('private_key_provided', generatedAccount.privateKey);
           } else if (action === 'import') {
             await wallet.loadAccountByPrivateKey(privateKey, password);
