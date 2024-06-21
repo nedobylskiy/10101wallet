@@ -40,6 +40,10 @@ class EmbeddedWallet extends EventEmitter {
         return await Keystorage.getEncryptedAccount(accountName);
     }
 
+    async setEcryptedAccount(encryptedKey, password, accountName = 'mainAccount') {
+        await Keystorage.setEcryptedAccount(encryptedKey, password, accountName);
+    }
+
     async #loadWeb3AccountByPrivateKey(privateKey) {
         await this.#unloadWeb3Account(); //Unload active account to prevent key leak
         const account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
