@@ -40,8 +40,8 @@ class EmbeddedWallet extends EventEmitter {
         return await Keystorage.getEncryptedAccount(accountName);
     }
 
-    async setEcryptedAccount(encryptedKey, password, accountName = 'mainAccount') {
-        await Keystorage.setEcryptedAccount(encryptedKey, password, accountName);
+    async setEncryptedAccount(encryptedKey, password, accountName = 'mainAccount') {
+        await Keystorage.setEncryptedAccount(encryptedKey, password, accountName);
     }
 
     async #loadWeb3AccountByPrivateKey(privateKey) {
