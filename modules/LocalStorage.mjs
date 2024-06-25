@@ -1,25 +1,34 @@
+import IndexedDBKeyValueStore from "./IndexedDBKeyValueStore.mjs";
 
 let data = {};
 
-class LocalStorage{
+let idb = new IndexedDBKeyValueStore('walletData', 'data');
+
+class LocalStorage {
 
     constructor() {
 
     }
 
-    static setItem(key, value){
-        if(typeof localStorage !== 'undefined'){
-             localStorage.setItem(key, value);
-             return;
+    static async setItem(key, value) {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(key, value);
+            return;
         }
-        data[key] = value;
+
+        await idb.set(key, value);
+
+        // data[key] = value;
     }
 
-    static getItem(key){
-        if(typeof localStorage !== 'undefined'){
+    static async getItem(key) {
+        if (typeof localStorage !== 'undefined') {
             return localStorage.getItem(key);
         }
-        return data[key];
+
+        return await idb.get(key);
+
+        //  return data[key];
     }
 }
 

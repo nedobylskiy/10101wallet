@@ -1,17 +1,28 @@
 import {Web3} from "web3";
 import Keystorage from "./modules/Keystorage.mjs";
-import {createConnector} from "@wagmi/core";
 import EventEmitter from 'events';
-import ClientPageRPC from "./modules/ClientPageRPC.mjs";
 
-const SERVICE_WORKER_URL = '/dist/service-worker.js';
-
-class EmbeddedWalletOld extends EventEmitter {
+class EmbeddedWalletWorker extends EventEmitter {
     currentAccount = null;
 
     constructor(urlOrProvider) {
         super();
-        this.web3 = new Web3(urlOrProvider);
+        this.web3 = this.web3i;
+        this.urlOrProvider = urlOrProvider;
+    }
+
+    get web3i() {
+        if (this.web3) {
+            return this.web3;
+        }
+
+        this.web3 = new Web3(this.urlOrProvider);
+    }
+
+    async changeProvider(urlOrProvider) {
+        this.urlOrProvider = urlOrProvider;
+        delete this.web3;
+        this.web3 = this.web3i;
     }
 
     async generateNewAccount(password = '', accountName = 'mainAccount') {
@@ -149,135 +160,72 @@ class EmbeddedWalletOld extends EventEmitter {
     }
 }
 
-//The RPCied version of the class
-class EmbeddedWallet {
-    constructor(urlOrProvider) {
-        this.urlOrProvider = urlOrProvider;
-    }
+//export default EmbeddedWallet;
 
-    async init() {
-        if ('serviceWorker' in navigator) {
-            try {
-                console.log('Wallet: Service worker registration...');
-                const registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL);
-                console.log('Wallet: Service worker registered:', registration);
+let worker = new EmbeddedWalletWorker('http://localhost:8545');
 
-                this.RPC = new ClientPageRPC(registration);
-                window.RPC = RPC;
 
-                await this.RPC.waitForActive();
+class HostRPC {
+    requests = {};
+    methods = {
+        async test() {
+            return 'test';
+        }
+    };
 
-                //TODO call change network
-
-                return this.RPC;
-
-            } catch (error) {
-                console.error('Wallet: Service worker registration failed:', error);
-                throw error;
-            }
-
+    async broadcast(message) {
+        for (const client of await clients.matchAll({includeUncontrolled: true, type: 'window'})) {
+            client.postMessage(message);
         }
     }
-}
 
-export default EmbeddedWallet;
-
-
-export function embedded10101WalletConnector({
-                                                 network,
-                                                 chains,
-                                                 options
-                                             }) {
-    console.log('embedded10101WalletConnector', network, chains, options);
-    console.log(network.rpcUrls.default.http);
-    let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
-
-    let id = 'embedded10101';
-    let name = 'Embedded 10101';
-    let type = 'wallet';
-
-
-    return createConnector((config) => ({
-        id,
-        name,
-        type,
-        getProvider: async function () {
-            return wallet;
-        },
-        connect: async function () {
-            console.log('connect');
-
-
+    async request(id, method, params, event) {
+        if(!params){
+            params = [];
+        }
+        console.log('Request:', id, method, params);
+        if (method in this.methods) {
+            let result = null;
+            let error = null;
             try {
-                if (await wallet.hasSavedAccount()) {
-                    wallet.emit('password_request');
-
-                    const password = await new Promise((resolve, reject) => {
-                        wallet.once('password_provided', resolve);
-                        wallet.once('password_rejected', () => {
-                            reject(new Error('User rejected the password request.'));
-                        });
-                    });
-
-                    try {
-                        await wallet.loadAccount(password);
-                    } catch (e) {
-                        console.error('Invalid password', e);
-                        throw e;
-                    }
-                } else {
-                    wallet.emit('account_action_request');
-
-                    const {action, privateKey, password} = await new Promise((resolve, reject) => {
-                        wallet.once('account_action_provided', resolve);
-                        wallet.once('account_action_rejected', () => {
-                            reject(new Error('User rejected the account action request.'));
-                        });
-                    });
-
-                    if (action === 'generate') {
-                        const generatedAccount = await wallet.generateNewAccount(password);
-                        wallet.emit('private_key_provided', generatedAccount.privateKey);
-                    } else if (action === 'import') {
-                        await wallet.loadAccountByPrivateKey(privateKey, password);
-                    } else {
-                        throw new Error("Invalid action. Please provide 'generate' or 'import'.");
-                    }
-                }
-
-                return {
-                    accounts: [await wallet.getAddress()],
-                    chainId: await wallet.eth_chainId()
-                };
-
+                result = await this.methods[method](...params);
             } catch (e) {
-                console.error('Error during connect', e);
-                throw e;
+                error = e;
             }
-        },
-        getAccounts: async function () {
-            return [await wallet.getAddress()];
-        },
-        onConnect: async function () {
-        },
-        disconnect: async function () {
-        },
-        isAuthorized: async function () {
-            return await wallet.isAuthorized();
-        },
-        onDisconnect: async function () {
-        },
-        getChainId: async function () {
-            return await wallet.eth_chainId();
-        },
-        onAccountsChanged: async function () {
-        },
-        onMessage: async function () {
-            console.log('onMessage', arguments);
-        },
-        switchChain: async function () {
+
+            await this.broadcast({id, result, error});
 
         }
-
-    }))
+    }
 }
+
+const RPC = new HostRPC();
+
+
+console.log('Worker started');
+
+await RPC.broadcast({rpcstarted: true})
+
+setInterval(async () => {
+    await RPC.broadcast({rpcstarted: true});
+}, 1000);
+
+self.addEventListener('activate', event => {
+    console.log('Service worker activated');
+    event.waitUntil(clients.claim());
+    console.log('Service worker claimed clients');
+});
+
+self.addEventListener('install', function (event) {
+    console.log('Service worker installed');
+});
+
+self.addEventListener('message', async event => {
+
+    if (event.data.method) {
+        await RPC.request(event.data.id, event.data.method, event.data.params, event);
+    }
+
+   // console.log('Received message:', event.data);
+    // Обработка сообщения
+});
