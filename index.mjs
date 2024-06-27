@@ -5,6 +5,8 @@ import EventEmitter from 'events';
 import ClientPageRPC from "./modules/ClientPageRPC.mjs";
 
 const SERVICE_WORKER_URL = '/dist/service-worker.js';
+const FIRST_ENDPOINT = 'https://cloudflare-eth.com';
+
 
 class EmbeddedWalletOld extends EventEmitter {
     currentAccount = null;
@@ -177,7 +179,9 @@ class EmbeddedWallet extends EventEmitter {
 
                 await this.RPC.waitForActive();
 
-                await this.changeProvider(this.urlOrProvider);
+                if(this.urlOrProvider) {
+                    await this.changeProvider(this.urlOrProvider);
+                }
 
 
 
@@ -289,7 +293,7 @@ class EmbeddedWallet extends EventEmitter {
 
 export default EmbeddedWallet;
 
-let wallet = new EmbeddedWallet(SERVICE_WORKER_URL);
+let wallet = new EmbeddedWallet(FIRST_ENDPOINT);
 
 wallet.init(); //TODO я хуй знает куда это вставить в асинхронном режиме, так что будет такой костыль, надеюсь будет работать
 
@@ -314,6 +318,8 @@ export function embedded10101WalletConnector({
     //let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
 
 
+
+
     let id = 'embedded10101';
     let name = 'Embedded 10101';
     let type = 'wallet';
@@ -332,6 +338,8 @@ export function embedded10101WalletConnector({
                 console.log('connect');
 
                 await wallet.init();
+
+                await wallet.changeProvider(network.rpcUrls.default.http[0]);
 
 
                 try {
