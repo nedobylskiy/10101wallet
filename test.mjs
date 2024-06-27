@@ -1,9 +1,7 @@
 import EmbeddedWallet from "./index.mjs";
 
-let wallet = new EmbeddedWallet('http://localhost:8545');
+let wallet = new EmbeddedWallet('https://cloudflare-eth.com');
+await wallet.init();
+window.wallet = wallet;
 
-let account = await wallet.generateNewAccount('password');
-
-console.log(account);
-
-console.log(await wallet.getEncryptedAccount());
+console.log(await wallet.eth_chainId());
