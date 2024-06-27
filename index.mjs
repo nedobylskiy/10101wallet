@@ -291,7 +291,9 @@ export default EmbeddedWallet;
 
 let wallet = new EmbeddedWallet(SERVICE_WORKER_URL);
 
-if(window){
+wallet.init(); //TODO я хуй знает куда это вставить в асинхронном режиме, так что будет такой костыль, надеюсь будет работать
+
+if(typeof window!== 'undefined'){
     if(!window.web310101Wallet) {
         window.web310101Wallet = wallet;
     }else{
@@ -317,9 +319,8 @@ export function embedded10101WalletConnector({
     let type = 'wallet';
 
 
-    return createConnector(async (config) => {
+    return createConnector( (config) => {
 
-        await wallet.init();
         return {
             id,
             name,
