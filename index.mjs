@@ -278,6 +278,8 @@ class EmbeddedWallet extends EventEmitter{
 
 export default EmbeddedWallet;
 
+let wallet = new EmbeddedWallet(SERVICE_WORKER_URL);
+await wallet.init();
 
 export  function embedded10101WalletConnector({
                                                  network,
@@ -286,7 +288,8 @@ export  function embedded10101WalletConnector({
                                              }) {
     console.log('embedded10101WalletConnector', network, chains, options);
     console.log(network.rpcUrls.default.http);
-    let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
+    //let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
+
 
 
     let id = 'embedded10101';
@@ -296,7 +299,7 @@ export  function embedded10101WalletConnector({
 
     return  createConnector(async (config) => {
 
-        await wallet.init();
+        await wallet.changeProvider(network.rpcUrls.default.http[0]);
         return {
         id,
         name,
