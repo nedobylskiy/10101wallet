@@ -150,13 +150,21 @@ class EmbeddedWalletOld extends EventEmitter {
 }
 
 //The RPCied version of the class
-class EmbeddedWallet extends EventEmitter{
+class EmbeddedWallet extends EventEmitter {
     constructor(urlOrProvider) {
         super();
         this.urlOrProvider = urlOrProvider;
+        this.inited = false;
+    }
+
+    ifInitialized() {
+        this.inited = true;
     }
 
     async init() {
+        if (this.inited) {
+            return this.RPC;
+        }
         if ('serviceWorker' in navigator) {
             try {
                 console.log('Wallet: Service worker registration...');
@@ -169,6 +177,8 @@ class EmbeddedWallet extends EventEmitter{
                 await this.RPC.waitForActive();
 
                 await this.changeProvider(this.urlOrProvider);
+
+                this.inited = true;
 
                 return this.RPC;
 
@@ -260,7 +270,7 @@ class EmbeddedWallet extends EventEmitter{
                 });
             });
 
-           return await this.RPC.request('eth_sendTransaction', [{data, from, to}]);
+            return await this.RPC.request('eth_sendTransaction', [{data, from, to}]);
         } catch (error) {
             console.error('Error during transaction send:', error);
             throw error;
@@ -279,9 +289,9 @@ class EmbeddedWallet extends EventEmitter{
 export default EmbeddedWallet;
 
 let wallet = new EmbeddedWallet(SERVICE_WORKER_URL);
-await wallet.init();
 
-export  function embedded10101WalletConnector({
+
+export function embedded10101WalletConnector({
                                                  network,
                                                  chains,
                                                  options
@@ -291,98 +301,98 @@ export  function embedded10101WalletConnector({
     //let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
 
 
-
     let id = 'embedded10101';
     let name = 'Embedded 10101';
     let type = 'wallet';
 
 
-    return  createConnector(async (config) => {
+    return createConnector(async (config) => {
 
-        await wallet.changeProvider(network.rpcUrls.default.http[0]);
+        await wallet.init();
         return {
-        id,
-        name,
-        type,
-        getProvider: async function () {
-            return wallet;
-        },
-        connect: async function () {
-            console.log('connect');
+            id,
+            name,
+            type,
+            getProvider: async function () {
+                return wallet;
+            },
+            connect: async function () {
+                console.log('connect');
 
-            await wallet.init();
+                await wallet.init();
 
 
-            try {
-                if (await wallet.hasSavedAccount()) {
-                    wallet.emit('password_request');
+                try {
+                    if (await wallet.hasSavedAccount()) {
+                        wallet.emit('password_request');
 
-                    const password = await new Promise((resolve, reject) => {
-                        wallet.once('password_provided', resolve);
-                        wallet.once('password_rejected', () => {
-                            reject(new Error('User rejected the password request.'));
+                        const password = await new Promise((resolve, reject) => {
+                            wallet.once('password_provided', resolve);
+                            wallet.once('password_rejected', () => {
+                                reject(new Error('User rejected the password request.'));
+                            });
                         });
-                    });
 
-                    try {
-                        await wallet.loadAccount(password);
-                    } catch (e) {
-                        console.error('Invalid password', e);
-                        throw e;
-                    }
-                } else {
-                    wallet.emit('account_action_request');
-
-                    const {action, privateKey, password} = await new Promise((resolve, reject) => {
-                        wallet.once('account_action_provided', resolve);
-                        wallet.once('account_action_rejected', () => {
-                            reject(new Error('User rejected the account action request.'));
-                        });
-                    });
-
-                    if (action === 'generate') {
-                        const generatedAccount = await wallet.generateNewAccount(password);
-                        wallet.emit('private_key_provided', generatedAccount.privateKey);
-                    } else if (action === 'import') {
-                        await wallet.loadAccountByPrivateKey(privateKey, password);
+                        try {
+                            await wallet.loadAccount(password);
+                        } catch (e) {
+                            console.error('Invalid password', e);
+                            throw e;
+                        }
                     } else {
-                        throw new Error("Invalid action. Please provide 'generate' or 'import'.");
+                        wallet.emit('account_action_request');
+
+                        const {action, privateKey, password} = await new Promise((resolve, reject) => {
+                            wallet.once('account_action_provided', resolve);
+                            wallet.once('account_action_rejected', () => {
+                                reject(new Error('User rejected the account action request.'));
+                            });
+                        });
+
+                        if (action === 'generate') {
+                            const generatedAccount = await wallet.generateNewAccount(password);
+                            wallet.emit('private_key_provided', generatedAccount.privateKey);
+                        } else if (action === 'import') {
+                            await wallet.loadAccountByPrivateKey(privateKey, password);
+                        } else {
+                            throw new Error("Invalid action. Please provide 'generate' or 'import'.");
+                        }
                     }
+
+                    return {
+                        accounts: [await wallet.getAddress()],
+                        chainId: await wallet.eth_chainId()
+                    };
+
+                } catch (e) {
+                    console.error('Error during connect', e);
+                    throw e;
                 }
+            },
+            getAccounts: async function () {
+                return [await wallet.getAddress()];
+            },
+            onConnect: async function () {
+            },
+            disconnect: async function () {
+            },
+            isAuthorized: async function () {
+                return await wallet.isAuthorized();
+            },
+            onDisconnect: async function () {
+            },
+            getChainId: async function () {
+                return await wallet.eth_chainId();
+            },
+            onAccountsChanged: async function () {
+            },
+            onMessage: async function () {
+                console.log('onMessage', arguments);
+            },
+            switchChain: async function () {
 
-                return {
-                    accounts: [await wallet.getAddress()],
-                    chainId: await wallet.eth_chainId()
-                };
-
-            } catch (e) {
-                console.error('Error during connect', e);
-                throw e;
             }
-        },
-        getAccounts: async function () {
-            return [await wallet.getAddress()];
-        },
-        onConnect: async function () {
-        },
-        disconnect: async function () {
-        },
-        isAuthorized: async function () {
-            return await wallet.isAuthorized();
-        },
-        onDisconnect: async function () {
-        },
-        getChainId: async function () {
-            return await wallet.eth_chainId();
-        },
-        onAccountsChanged: async function () {
-        },
-        onMessage: async function () {
-            console.log('onMessage', arguments);
-        },
-        switchChain: async function () {
 
         }
-
-    }})
+    })
 }
