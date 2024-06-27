@@ -5,10 +5,10 @@ import {CleanWebpackPlugin} from "clean-webpack-plugin";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default {
-    target: 'webworker',
-    entry: './service-worker.mjs',
+    target: 'web',
+    entry: './test.mjs',
     output: {
-        filename: 'service-worker.js',
+        filename: 'test.js',
         path: path.resolve(__dirname, 'dist'),
     },
     resolve: {
@@ -35,6 +35,6 @@ export default {
         ]
     },
     plugins: [
-       // new CleanWebpackPlugin() // Очистка директории dist перед сборкой
+        new CleanWebpackPlugin() // Очистка директории dist перед сборкой
     ]
 };

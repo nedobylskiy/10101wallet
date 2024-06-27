@@ -150,8 +150,9 @@ class EmbeddedWalletOld extends EventEmitter {
 }
 
 //The RPCied version of the class
-class EmbeddedWallet {
+class EmbeddedWallet extends EventEmitter{
     constructor(urlOrProvider) {
+        super();
         this.urlOrProvider = urlOrProvider;
     }
 
@@ -163,11 +164,11 @@ class EmbeddedWallet {
                 console.log('Wallet: Service worker registered:', registration);
 
                 this.RPC = new ClientPageRPC(registration);
-                window.RPC = RPC;
+                window.RPC = this.RPC;
 
                 await this.RPC.waitForActive();
 
-                //TODO call change network
+                await this.changeProvider(this.urlOrProvider);
 
                 return this.RPC;
 
@@ -177,6 +178,100 @@ class EmbeddedWallet {
             }
 
         }
+    }
+
+    async changeProvider(urlOrProvider) {
+        this.urlOrProvider = urlOrProvider;
+        return await this.RPC.request('changeProvider', [urlOrProvider]);
+    }
+
+    async eth_chainId() {
+        return await this.RPC.request('eth_chainId');
+    }
+
+    async getGasPrice() {
+        return await this.RPC.request('getGasPrice');
+    }
+
+    async getBalance(address) {
+        return await this.RPC.request('getBalance', [address]);
+    }
+
+    async getAddress() {
+        return await this.RPC.request('getAddress');
+    }
+
+    async isAuthorized() {
+        return await this.RPC.request('isAuthorized');
+    }
+
+    async hasSavedAccount() {
+        return await this.RPC.request('hasSavedAccount');
+    }
+
+    async getEncryptedAccount() {
+        return await this.RPC.request('getEncryptedAccount');
+    }
+
+    async setEncryptedAccount(encryptedKey, password, accountName = 'mainAccount') {
+        return await this.RPC.request('setEncryptedAccount', [encryptedKey, password, accountName]);
+    }
+
+    async loadAccountByPrivateKey(privateKey, password = '', accountName = 'mainAccount') {
+        return await this.RPC.request('loadAccountByPrivateKey', [privateKey, password, accountName]);
+    }
+
+    async loadAccount(password, accountName = 'mainAccount') {
+        return await this.RPC.request('loadAccount', [password, accountName]);
+    }
+
+    async generateNewAccount(password = '', accountName = 'mainAccount') {
+        return await this.RPC.request('generateNewAccount', [password, accountName]);
+    }
+
+
+    async personal_sign(message, address) {
+        this.emit('personal_sign_request', {message, address});
+
+        try {
+            await new Promise((resolve, reject) => {
+                this.once('personal_sign_approved', resolve);
+                this.once('personal_sign_rejected', () => {
+                    reject(new Error('User rejected the sign request.'));
+                });
+            });
+
+            return await this.RPC.request('personal_sign', [message, address]);
+        } catch (error) {
+            console.error('Error during personal sign:', error);
+            throw error;
+        }
+    }
+
+    async eth_sendTransaction({data, from, to}) {
+        this.emit('eth_sendTransaction_request', {data, from, to});
+
+        try {
+            const tx = await new Promise((resolve, reject) => {
+                this.once('eth_sendTransaction_approved', resolve);
+                this.once('eth_sendTransaction_rejected', () => {
+                    reject(new Error('User rejected the transaction request.'));
+                });
+            });
+
+           return await this.RPC.request('eth_sendTransaction', [{data, from, to}]);
+        } catch (error) {
+            console.error('Error during transaction send:', error);
+            throw error;
+        }
+    }
+
+    async request(rpc) {
+        console.log('request', arguments);
+        if (!rpc.params) {
+            rpc.params = [];
+        }
+        return await this[rpc.method](...rpc.params);
     }
 }
 

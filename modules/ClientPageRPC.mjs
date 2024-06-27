@@ -5,7 +5,7 @@ export default class ClientPageRPC {
     constructor(registration) {
         this.registration = registration;
         navigator.serviceWorker.addEventListener('message', async (event) => {
-            console.log('Message from service worker:', event.data);
+           // console.log('Message from service worker:', event.data);
             await this.processIncomeMessage(event.data);
         });
     }
