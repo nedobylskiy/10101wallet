@@ -279,7 +279,7 @@ class EmbeddedWallet extends EventEmitter{
 export default EmbeddedWallet;
 
 
-export async function embedded10101WalletConnector({
+export  function embedded10101WalletConnector({
                                                  network,
                                                  chains,
                                                  options
@@ -288,14 +288,16 @@ export async function embedded10101WalletConnector({
     console.log(network.rpcUrls.default.http);
     let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
 
-    await wallet.init();
 
     let id = 'embedded10101';
     let name = 'Embedded 10101';
     let type = 'wallet';
 
 
-    return createConnector((config) => ({
+    return  createConnector(async (config) => {
+
+        await wallet.init();
+        return {
         id,
         name,
         type,
@@ -379,5 +381,5 @@ export async function embedded10101WalletConnector({
 
         }
 
-    }))
+    }})
 }
