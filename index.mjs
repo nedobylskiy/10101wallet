@@ -165,6 +165,7 @@ class EmbeddedWallet extends EventEmitter {
         if (this.inited) {
             return this.RPC;
         }
+        this.inited = true;
         if ('serviceWorker' in navigator) {
             try {
                 console.log('Wallet: Service worker registration...');
@@ -178,7 +179,7 @@ class EmbeddedWallet extends EventEmitter {
 
                 await this.changeProvider(this.urlOrProvider);
 
-                this.inited = true;
+
 
                 return this.RPC;
 
@@ -289,6 +290,16 @@ class EmbeddedWallet extends EventEmitter {
 export default EmbeddedWallet;
 
 let wallet = new EmbeddedWallet(SERVICE_WORKER_URL);
+
+if(window){
+    if(!window.web310101Wallet) {
+        window.web310101Wallet = wallet;
+    }else{
+        wallet = window.web310101Wallet;
+    }
+}
+
+
 
 
 export function embedded10101WalletConnector({
