@@ -48,7 +48,7 @@ class EmbeddedWalletWorker extends EventEmitter {
 
         //delete account.privateKey; //TODO в будущем надо будет удалять приватный ключ из объекта
 
-        return {...account, encryptedKey, privateKey};
+        return {address: account.address, encryptedKey, privateKey};
     }
 
     async loadAccount(password, accountName = 'mainAccount') {
@@ -148,6 +148,7 @@ class HostRPC {
     methods = {};
 
     async broadcast(message) {
+        console.log('Broadcasting', message);
         for (const client of await clients.matchAll({includeUncontrolled: true, type: 'window'})) {
             client.postMessage(message);
         }
