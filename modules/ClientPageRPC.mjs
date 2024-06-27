@@ -25,9 +25,9 @@ export default class ClientPageRPC {
         }
     }
 
-    async request(method, data) {
+    async request(method, params) {
         let id = Math.random().toString(36);
-        let request = {id, method, data};
+        let request = {id, method, params};
         let response = new Promise((resolve, reject) => {
             this.requests[id] = {resolve, reject};
         });

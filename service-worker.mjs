@@ -25,6 +25,7 @@ class EmbeddedWalletWorker extends EventEmitter {
     }
 
     async changeProvider(urlOrProvider) {
+       // console.log('NEW PROVIDER', urlOrProvider)
         this.urlOrProvider = urlOrProvider;
         delete this.web3;
         this.web3 = this.web3i();
@@ -156,19 +157,19 @@ class HostRPC {
         if (!params) {
             params = [];
         }
-        console.log('Request:', id, method, params);
+        //console.log('Request:', id, method, params);
         if (method in this.methods) {
             let result = null;
             let error = null;
             try {
                 result = await this.methods[method](...params);
-                console.log('result ok', id);
+               // console.log('result ok', id);
             } catch (e) {
-                console.log('result error', id, e);
+               // console.log('result error', id, e);
                 error = e;
             }
 
-            console.log('Boradcasting', id);
+           // console.log('Boradcasting', id);
             await this.broadcast({id, result, error});
 
         }
@@ -203,13 +204,13 @@ setInterval(async () => {
 }, 1000);
 
 self.addEventListener('activate', event => {
-    console.log('Service worker activated');
+    console.log('Wallet: Service worker activated');
     event.waitUntil(clients.claim());
-    console.log('Service worker claimed clients');
+    console.log('Wallet: Service worker claimed clients');
 });
 
 self.addEventListener('install', function (event) {
-    console.log('Service worker installed');
+    console.log('Wallet: Service worker installed');
 });
 
 self.addEventListener('message', async event => {
