@@ -338,10 +338,15 @@ export function embedded10101WalletConnector({
             getProvider: async function () {
                 return wallet;
             },
-            connect: async function () {
-                console.log('connect');
-
+            connect: async function ({ isReconnecting }) {
                 await wallet.init();
+
+                if (isReconnecting) {
+                    return {
+                        accounts: [await wallet.getAddress()],
+                        chainId: await wallet.eth_chainId()
+                    };
+                }
 
                 await wallet.changeProvider(network.rpcUrls.default.http[0]);
 
