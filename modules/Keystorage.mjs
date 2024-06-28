@@ -10,7 +10,7 @@ class Keystorage {
     }
 
     static async load(password, accountName = 'mainAccount') {
-        let encryptedKey = LocalStorage.getItem(`ecryptedKey_${accountName}`);
+        let encryptedKey = await LocalStorage.getItem(`ecryptedKey_${accountName}`);
         return await this.decryptKey(encryptedKey, password);
     }
 
@@ -20,6 +20,10 @@ class Keystorage {
 
     static async setEncryptedAccount(encryptedKey, password, accountName = 'mainAccount') {
         LocalStorage.setItem(`ecryptedKey_${accountName}`, encryptedKey);
+    }
+
+    static async removeEncryptedAccount(accountName = 'mainAccount') {
+        LocalStorage.removeItem(`ecryptedKey_${accountName}`);
     }
 
     static async encryptKey(key, password) {

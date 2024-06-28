@@ -233,6 +233,10 @@ class EmbeddedWallet extends EventEmitter {
         return await this.RPC.request('setEncryptedAccount', [encryptedKey, password, accountName]);
     }
 
+    async removeEncryptedAccount(accountName = 'mainAccount') {
+        return await this.RPC.request('removeEncryptedAccount', [accountName]);
+    }
+
     async loadAccountByPrivateKey(privateKey, password = '', accountName = 'mainAccount') {
         return await this.RPC.request('loadAccountByPrivateKey', [privateKey, password, accountName]);
     }
@@ -371,7 +375,7 @@ export function embedded10101WalletConnector({
 
                         if (action === 'generate') {
                             const generatedAccount = await wallet.generateNewAccount(password);
-                            wallet.emit('private_key_provided', generatedAccount.privateKey);
+                            wallet.emit('private_key_provided', generatedAccount);
                         } else if (action === 'import') {
                             await wallet.loadAccountByPrivateKey(privateKey, password);
                         } else {
@@ -395,6 +399,11 @@ export function embedded10101WalletConnector({
             onConnect: async function () {
             },
             disconnect: async function () {
+                await wallet.removeEncryptedAccount();
+            },
+            disconnectAccount: async function () {
+                console.log('disconnectAccount');
+                await wallet.removeEncryptedAccount();
             },
             isAuthorized: async function () {
                 return await wallet.isAuthorized();
