@@ -3,6 +3,7 @@ import Keystorage from "./modules/Keystorage.mjs";
 import EventEmitter from 'events';
 
 const FIRST_ENDPOINT = 'https://cloudflare-eth.com';
+const AUTOLOCK_TIMEOUT = 1000 * 60;
 
 class EmbeddedWalletWorker extends EventEmitter {
     currentAccount = null;
@@ -11,6 +12,7 @@ class EmbeddedWalletWorker extends EventEmitter {
         super();
         this.urlOrProvider = urlOrProvider;
         this.web3 = this.web3i();
+        this.locked = true;
 
     }
 
@@ -19,13 +21,13 @@ class EmbeddedWalletWorker extends EventEmitter {
             return this.web3;
         }
 
-        this.web3 = new Web3(this.urlOrProvider)
+        this.web3 = new Web3(this.urlOrProvider);
 
         return this.web3;
     }
 
     async changeProvider(urlOrProvider) {
-       // console.log('NEW PROVIDER', urlOrProvider)
+        // console.log('NEW PROVIDER', urlOrProvider)
         this.urlOrProvider = urlOrProvider;
         delete this.web3;
         this.web3 = this.web3i();
@@ -51,9 +53,22 @@ class EmbeddedWalletWorker extends EventEmitter {
         return {address: account.address, encryptedKey, privateKey};
     }
 
+    #startAutolockTimer() {
+        this.locked = false;
+        if (this.autolockTimer) {
+            clearTimeout(this.autolockTimer);
+        }
+        this.autolockTimer = setTimeout(async () => {
+            this.locked = true;
+            await this.#unloadWeb3Account();
+        }, AUTOLOCK_TIMEOUT);
+    }
+
+
     async loadAccount(password, accountName = 'mainAccount') {
         let privateKey = await Keystorage.load(password, accountName);
         await this.#loadWeb3AccountByPrivateKey(privateKey);
+        this.#startAutolockTimer();
     }
 
     async getEncryptedAccount(accountName = 'mainAccount') {
@@ -74,6 +89,7 @@ class EmbeddedWalletWorker extends EventEmitter {
     async loadAccountByPrivateKey(privateKey, password = '', accountName = 'mainAccount') {
         await this.#loadWeb3AccountByPrivateKey(privateKey);
         await Keystorage.save(privateKey, password, accountName);
+        this.#startAutolockTimer();
     }
 
     async #unloadWeb3Account() {
@@ -91,6 +107,20 @@ class EmbeddedWalletWorker extends EventEmitter {
 
     async isAuthorized() {
         return this.currentAccount !== null;
+    }
+
+    async isLocked() {
+        return this.locked;
+    }
+
+    async unlock(password) {
+        if (!this.locked) {
+            return;
+        }
+
+        let privateKey = await Keystorage.load(password);
+        await this.#loadWeb3AccountByPrivateKey(privateKey);
+        this.#startAutolockTimer();
     }
 
     async hasSavedAccount() {
@@ -164,13 +194,13 @@ class HostRPC {
             let error = null;
             try {
                 result = await this.methods[method](...params);
-               // console.log('result ok', id);
+                // console.log('result ok', id);
             } catch (e) {
-               // console.log('result error', id, e);
+                // console.log('result error', id, e);
                 error = e;
             }
 
-           // console.log('Boradcasting', id);
+            // console.log('Boradcasting', id);
             await this.broadcast({id, result, error});
 
         }
@@ -193,7 +223,9 @@ RPC.methods = {
     loadAccountByPrivateKey: worker.loadAccountByPrivateKey.bind(worker),
     changeProvider: worker.changeProvider.bind(worker),
     personal_sign: worker.personal_sign.bind(worker),
-    eth_sendTransaction: worker.eth_sendTransaction.bind(worker)
+    eth_sendTransaction: worker.eth_sendTransaction.bind(worker),
+    isLocked: worker.isLocked.bind(worker),
+    unlock: worker.unlock.bind(worker)
 };
 
 console.log('Worker started');
