@@ -80,6 +80,10 @@ class EmbeddedWalletWorker extends EventEmitter {
         await Keystorage.setEncryptedAccount(encryptedKey, password, accountName);
     }
 
+    async removeEncryptedAccount(accountName = 'mainAccount') {
+        return await Keystorage.removeEncryptedAccount(accountName);
+    }
+
     async #loadWeb3AccountByPrivateKey(privateKey) {
         await this.#unloadWeb3Account(); //Unload active account to prevent key leak
         const account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
@@ -225,6 +229,7 @@ RPC.methods = {
     getBalance: worker.getBalance.bind(worker),
     getEncryptedAccount: worker.getEncryptedAccount.bind(worker),
     setEncryptedAccount: worker.setEncryptedAccount.bind(worker),
+    removeEncryptedAccount: worker.removeEncryptedAccount.bind(worker),
     loadAccountByPrivateKey: worker.loadAccountByPrivateKey.bind(worker),
     changeProvider: worker.changeProvider.bind(worker),
     personal_sign: worker.personal_sign.bind(worker),
