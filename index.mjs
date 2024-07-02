@@ -59,7 +59,7 @@ class EmbeddedWallet extends EventEmitter {
     }
 
     async eth_chainId() {
-        return await this.RPC.request('eth_chainId');
+        return Number(await this.RPC.request('eth_chainId'));
     }
 
     async getGasPrice() {
