@@ -3,7 +3,7 @@ import Keystorage from "./modules/Keystorage.mjs";
 import EventEmitter from 'events';
 
 const FIRST_ENDPOINT = 'https://cloudflare-eth.com';
-const AUTOLOCK_TIMEOUT = 1000 * 10;
+const AUTOLOCK_TIMEOUT = 1000 * 30;
 
 class EmbeddedWalletWorker extends EventEmitter {
     currentAccount = null;
