@@ -53001,7 +53001,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const FIRST_ENDPOINT = 'https://cloudflare-eth.com';
-const AUTOLOCK_TIMEOUT = 1000 * 10;
+const AUTOLOCK_TIMEOUT = 1000 * 30;
 
 class EmbeddedWalletWorker extends events__WEBPACK_IMPORTED_MODULE_2__ {
     currentAccount = null;
@@ -53123,7 +53123,7 @@ class EmbeddedWalletWorker extends events__WEBPACK_IMPORTED_MODULE_2__ {
 
         let privateKey = await _modules_Keystorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].load(password);
         await this.#loadWeb3AccountByPrivateKey(privateKey);
-        this.#startAutolockTimer();
+        await this.#startAutolockTimer();
     }
 
     async hasSavedAccount() {
