@@ -21,6 +21,17 @@ class LocalStorage {
         // data[key] = value;
     }
 
+    static async removeItem(key) {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(key);
+            return;
+        }
+
+        await idb.delete(key);
+
+        // delete data[key];
+    }
+
     static async getItem(key) {
         if (typeof localStorage !== 'undefined') {
             return localStorage.getItem(key);
