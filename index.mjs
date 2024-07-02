@@ -26,7 +26,7 @@ class EmbeddedWallet extends EventEmitter {
             return this.RPC;
         }
         this.inited = true;
-        if ('serviceWorker' in navigator) {
+        if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
             try {
                 console.log('Wallet: Service worker registration...');
                 const registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL);
@@ -37,10 +37,9 @@ class EmbeddedWallet extends EventEmitter {
 
                 await this.RPC.waitForActive();
 
-                if(this.urlOrProvider) {
+                if (this.urlOrProvider) {
                     await this.changeProvider(this.urlOrProvider);
                 }
-
 
 
                 return this.RPC;
@@ -118,7 +117,11 @@ class EmbeddedWallet extends EventEmitter {
 
     async personal_sign(message, address) {
 
+        console.log('REquest personal sign', message, address);
+
         let isLocked = await this.isLocked();
+
+        console.log('isLocked', isLocked);
 
         this.emit('personal_sign_request', {message, address});
 
@@ -130,7 +133,8 @@ class EmbeddedWallet extends EventEmitter {
                 });
             });
 
-            if(isLocked){
+            if (isLocked) {
+                console.log('2isLocked', isLocked);
                 await this.unlock(FrontendWindows.requestPassword(this));
             }
 
@@ -155,7 +159,7 @@ class EmbeddedWallet extends EventEmitter {
                 });
             });
 
-            if(isLocked){
+            if (isLocked) {
                 await this.unlock(FrontendWindows.requestPassword(this));
             }
 
@@ -181,15 +185,13 @@ let wallet = new EmbeddedWallet(FIRST_ENDPOINT);
 
 wallet.init(); //TODO я хуй знает куда это вставить в асинхронном режиме, так что будет такой костыль, надеюсь будет работать
 
-if(typeof window!== 'undefined'){
-    if(!window.web310101Wallet) {
+if (typeof window !== 'undefined') {
+    if (!window.web310101Wallet) {
         window.web310101Wallet = wallet;
-    }else{
+    } else {
         wallet = window.web310101Wallet;
     }
 }
-
-
 
 
 export function embedded10101WalletConnector({
@@ -202,14 +204,12 @@ export function embedded10101WalletConnector({
     //let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
 
 
-
-
     let id = 'embedded10101';
     let name = 'Embedded 10101';
     let type = 'wallet';
 
 
-    return createConnector( (config) => {
+    return createConnector((config) => {
 
         return {
             id,
@@ -218,7 +218,7 @@ export function embedded10101WalletConnector({
             getProvider: async function () {
                 return wallet;
             },
-            connect: async function ({ isReconnecting }) {
+            connect: async function ({isReconnecting}) {
                 await wallet.init();
 
                 if (isReconnecting) {

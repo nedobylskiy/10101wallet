@@ -3,7 +3,7 @@ import Keystorage from "./modules/Keystorage.mjs";
 import EventEmitter from 'events';
 
 const FIRST_ENDPOINT = 'https://cloudflare-eth.com';
-const AUTOLOCK_TIMEOUT = 1000 * 60;
+const AUTOLOCK_TIMEOUT = 1000 * 10;
 
 class EmbeddedWalletWorker extends EventEmitter {
     currentAccount = null;
@@ -59,6 +59,7 @@ class EmbeddedWalletWorker extends EventEmitter {
             clearTimeout(this.autolockTimer);
         }
         this.autolockTimer = setTimeout(async () => {
+            console.log('Autolock');
             this.locked = true;
             await this.#unloadWeb3Account();
         }, AUTOLOCK_TIMEOUT);
@@ -176,9 +177,12 @@ let worker = new EmbeddedWalletWorker(FIRST_ENDPOINT);
 class HostRPC {
     requests = {};
     methods = {};
+    debug = false;
 
     async broadcast(message) {
-        console.log('Broadcasting', message);
+        if (this.debug) {
+            console.log('Broadcasting', message);
+        }
         for (const client of await clients.matchAll({includeUncontrolled: true, type: 'window'})) {
             client.postMessage(message);
         }
@@ -208,6 +212,7 @@ class HostRPC {
 }
 
 const RPC = new HostRPC();
+self.RPC = RPC;
 
 RPC.methods = {
     eth_chainId: worker.eth_chainId.bind(worker),
