@@ -125,7 +125,7 @@ class EmbeddedWalletWorker extends EventEmitter {
 
         let privateKey = await Keystorage.load(password);
         await this.#loadWeb3AccountByPrivateKey(privateKey);
-        this.#startAutolockTimer();
+        await this.#startAutolockTimer();
     }
 
     async hasSavedAccount() {

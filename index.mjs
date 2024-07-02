@@ -135,7 +135,7 @@ class EmbeddedWallet extends EventEmitter {
 
             if (isLocked) {
                 console.log('2isLocked', isLocked);
-                await this.unlock(FrontendWindows.requestPassword(this));
+                await this.unlock(await FrontendWindows.requestPassword(this));
             }
 
             return await this.RPC.request('personal_sign', [message, address]);
@@ -160,7 +160,7 @@ class EmbeddedWallet extends EventEmitter {
             });
 
             if (isLocked) {
-                await this.unlock(FrontendWindows.requestPassword(this));
+                await this.unlock(await FrontendWindows.requestPassword(this));
             }
 
             return await this.RPC.request('eth_sendTransaction', [{data, from, to}]);
