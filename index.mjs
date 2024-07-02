@@ -220,6 +220,7 @@ export function embedded10101WalletConnector({
             },
             connect: async function ({isReconnecting}) {
                 await wallet.init();
+                await wallet.changeProvider(network.rpcUrls.default.http[0]);
 
                 if (isReconnecting) {
                     return {
@@ -228,7 +229,7 @@ export function embedded10101WalletConnector({
                     };
                 }
 
-                await wallet.changeProvider(network.rpcUrls.default.http[0]);
+
 
 
                 try {
