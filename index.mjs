@@ -181,7 +181,7 @@ class EmbeddedWallet extends EventEmitter {
 
 export default EmbeddedWallet;
 
-let wallet = new EmbeddedWallet(FIRST_ENDPOINT);
+let wallet = new EmbeddedWallet(null);
 
 wallet.init(); //TODO я хуй знает куда это вставить в асинхронном режиме, так что будет такой костыль, надеюсь будет работать
 
