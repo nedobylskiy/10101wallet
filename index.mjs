@@ -245,7 +245,9 @@ export function embedded10101WalletConnector({
 
                         try {
                             await wallet.loadAccount(password);
+                            this.emit('account_loaded');
                         } catch (e) {
+                            this.emit('invalid_password');
                             console.error('Invalid password', e);
                             throw e;
                         }
