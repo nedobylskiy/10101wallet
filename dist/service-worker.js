@@ -9695,7 +9695,7 @@ __webpack_require__.r(__webpack_exports__);
 class Keystorage {
     static async save(key, password, accountName = 'mainAccount') {
         let encryptedKey = await this.encryptKey(key, password);
-        _LocalStorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].setItem(`ecryptedKey_${accountName}`, encryptedKey);
+        await _LocalStorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].setItem(`ecryptedKey_${accountName}`, encryptedKey);
 
         return encryptedKey;
     }
@@ -9710,11 +9710,20 @@ class Keystorage {
     }
 
     static async setEncryptedAccount(encryptedKey, password, accountName = 'mainAccount') {
-        _LocalStorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].setItem(`ecryptedKey_${accountName}`, encryptedKey);
+        await _LocalStorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].setItem(`ecryptedKey_${accountName}`, encryptedKey);
     }
 
     static async removeEncryptedAccount(accountName = 'mainAccount') {
-        _LocalStorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].removeItem(`ecryptedKey_${accountName}`);
+        await _LocalStorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].removeItem(`ecryptedKey_${accountName}`);
+    }
+
+    static async changeEcnryptedAccountPassword(oldPassword, newPassword, accountName = 'mainAccount') {
+        let encryptedKey = await _LocalStorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].getItem(`ecryptedKey_${accountName}`);
+        let key = await this.decryptKey(encryptedKey, oldPassword);
+        let newEncryptedKey = await this.encryptKey(key, newPassword);
+        await _LocalStorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].setItem(`ecryptedKey_${accountName}`, newEncryptedKey);
+
+        return newEncryptedKey;
     }
 
     static async encryptKey(key, password) {
@@ -53070,6 +53079,9 @@ class EmbeddedWalletWorker extends events__WEBPACK_IMPORTED_MODULE_2__ {
         this.#startAutolockTimer();
     }
 
+    async changeAccountPassword(oldPassword, newPassword, accountName = 'mainAccount') {
+        await _modules_Keystorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].changeEcnryptedAccountPassword(oldPassword, newPassword, accountName);
+    }
     async getEncryptedAccount(accountName = 'mainAccount') {
         return await _modules_Keystorage_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].getEncryptedAccount(accountName);
     }
@@ -53233,7 +53245,8 @@ RPC.methods = {
     personal_sign: worker.personal_sign.bind(worker),
     eth_sendTransaction: worker.eth_sendTransaction.bind(worker),
     isLocked: worker.isLocked.bind(worker),
-    unlock: worker.unlock.bind(worker)
+    unlock: worker.unlock.bind(worker),
+    changeAccountPassword: worker.changeAccountPassword.bind(worker),
 };
 
 console.log('Worker started');
