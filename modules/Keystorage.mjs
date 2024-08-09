@@ -4,13 +4,13 @@ import LocalStorage from "./LocalStorage.mjs";
 class Keystorage {
     static async save(key, password, accountName = 'mainAccount') {
         let encryptedKey = await this.encryptKey(key, password);
-        LocalStorage.setItem(`ecryptedKey_${accountName}`, encryptedKey);
+        await LocalStorage.setItem(`ecryptedKey_${accountName}`, encryptedKey);
 
         return encryptedKey;
     }
 
     static async load(password, accountName = 'mainAccount') {
-        let encryptedKey = LocalStorage.getItem(`ecryptedKey_${accountName}`);
+        let encryptedKey = await LocalStorage.getItem(`ecryptedKey_${accountName}`);
         return await this.decryptKey(encryptedKey, password);
     }
 
@@ -19,7 +19,20 @@ class Keystorage {
     }
 
     static async setEncryptedAccount(encryptedKey, password, accountName = 'mainAccount') {
-        LocalStorage.setItem(`ecryptedKey_${accountName}`, encryptedKey);
+        await LocalStorage.setItem(`ecryptedKey_${accountName}`, encryptedKey);
+    }
+
+    static async removeEncryptedAccount(accountName = 'mainAccount') {
+        await LocalStorage.removeItem(`ecryptedKey_${accountName}`);
+    }
+
+    static async changeEcnryptedAccountPassword(oldPassword, newPassword, accountName = 'mainAccount') {
+        let encryptedKey = await LocalStorage.getItem(`ecryptedKey_${accountName}`);
+        let key = await this.decryptKey(encryptedKey, oldPassword);
+        let newEncryptedKey = await this.encryptKey(key, newPassword);
+        await LocalStorage.setItem(`ecryptedKey_${accountName}`, newEncryptedKey);
+
+        return newEncryptedKey;
     }
 
     static async encryptKey(key, password) {

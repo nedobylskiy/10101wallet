@@ -58,7 +58,8 @@ export default class IndexedDBKeyValueStore {
             const request = store.get(key);
 
             request.onsuccess = () => {
-                resolve(request.result);
+                //console.log('get', key, request.result);
+                resolve(request.result || null);
             };
 
             request.onerror = event => {

@@ -5,7 +5,7 @@ export default class ClientPageRPC {
     constructor(registration) {
         this.registration = registration;
         navigator.serviceWorker.addEventListener('message', async (event) => {
-            console.log('Message from service worker:', event.data);
+           // console.log('Message from service worker:', event.data);
             await this.processIncomeMessage(event.data);
         });
     }
@@ -16,6 +16,9 @@ export default class ClientPageRPC {
             this.isActive = true;
         }
         if (data.id && this.requests[data.id]) {
+            if (typeof window !== 'undefined' && window.debug) {
+                console.log('RPC Response:', data.id, data.result, data.error);
+            }
             if (data.error) {
                 this.requests[data.id].reject(data.error);
             } else {
@@ -25,9 +28,12 @@ export default class ClientPageRPC {
         }
     }
 
-    async request(method, data) {
+    async request(method, params) {
         let id = Math.random().toString(36);
-        let request = {id, method, data};
+        if (typeof window !== 'undefined' && window.debug) {
+            console.log('RPC Request:', id, method, params);
+        }
+        let request = {id, method, params};
         let response = new Promise((resolve, reject) => {
             this.requests[id] = {resolve, reject};
         });
