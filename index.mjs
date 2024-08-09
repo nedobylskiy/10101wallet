@@ -82,6 +82,10 @@ class EmbeddedWallet extends EventEmitter {
         return await this.RPC.request('hasSavedAccount');
     }
 
+    async changeAccountPassword(oldPassword, newPassword) {
+        return await this.RPC.request('changeAccountPassword', [oldPassword, newPassword]);
+    }
+
     async getEncryptedAccount() {
         return await this.RPC.request('getEncryptedAccount');
     }

@@ -72,6 +72,9 @@ class EmbeddedWalletWorker extends EventEmitter {
         this.#startAutolockTimer();
     }
 
+    async changeAccountPassword(oldPassword, newPassword, accountName = 'mainAccount') {
+        await Keystorage.changeEcnryptedAccountPassword(oldPassword, newPassword, accountName);
+    }
     async getEncryptedAccount(accountName = 'mainAccount') {
         return await Keystorage.getEncryptedAccount(accountName);
     }
@@ -235,7 +238,8 @@ RPC.methods = {
     personal_sign: worker.personal_sign.bind(worker),
     eth_sendTransaction: worker.eth_sendTransaction.bind(worker),
     isLocked: worker.isLocked.bind(worker),
-    unlock: worker.unlock.bind(worker)
+    unlock: worker.unlock.bind(worker),
+    changeAccountPassword: worker.changeAccountPassword.bind(worker),
 };
 
 console.log('Worker started');
