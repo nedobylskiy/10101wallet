@@ -1,34 +1,32 @@
-//import Base64 from 'crypto-js/enc-base64';
 import CryptoJS from 'crypto-js';
 
 const JsonFormatter = {
     stringify: function (cipherParams) {
-        // create json object with ciphertext
-        let jsonObj = {ct: cipherParams.ciphertext.toString(CryptoJS.enc.Base64)};
+        // Create JSON object with ciphertext
+        let jsonObj = { ct: cipherParams.ciphertext.toString(CryptoJS.enc.Base64) };
 
-        // optionally add iv or salt
+        // Optionally add iv (initialization vector) or salt
         if (cipherParams.iv) {
-            jsonObj.iv = cipherParams.iv.toString();
+            jsonObj.iv = cipherParams.iv.toString(CryptoJS.enc.Hex); // Convert IV to hexadecimal string
         }
 
         if (cipherParams.salt) {
-            jsonObj.s = cipherParams.salt.toString();
+            jsonObj.s = cipherParams.salt.toString(CryptoJS.enc.Hex); // Convert salt to hexadecimal string
         }
 
-        // stringify json object
+        // Return JSON string
         return JSON.stringify(jsonObj);
     },
     parse: function (jsonStr) {
-        // parse json string
+        // Parse JSON string
         let jsonObj = JSON.parse(jsonStr);
 
-        // extract ciphertext from json object, and create cipher params object
+        // Extract ciphertext from JSON object and create CipherParams object
         let cipherParams = CryptoJS.lib.CipherParams.create({
             ciphertext: CryptoJS.enc.Base64.parse(jsonObj.ct)
         });
 
-        // optionally extract iv or salt
-
+        // Optionally extract IV or salt
         if (jsonObj.iv) {
             cipherParams.iv = CryptoJS.enc.Hex.parse(jsonObj.iv);
         }
@@ -46,19 +44,29 @@ const JsonFormatter = {
  */
 class Crypto {
     constructor() {
-
+        // Optionally initialize additional properties or configurations
     }
 
+    /**
+     * Encrypts a given text using AES encryption.
+     * @param {string} text - The text to encrypt.
+     * @param {string} key - The encryption key.
+     * @returns {Promise<string>} - A promise that resolves to the encrypted text.
+     */
     async encrypt(text, key) {
-        return CryptoJS.AES.encrypt(text, key, {
-            format: JsonFormatter
-        });
+        // Perform AES encryption and format the result using JsonFormatter
+        return CryptoJS.AES.encrypt(text, key, { format: JsonFormatter }).toString();
     }
 
-    async decrypt(endryptedData, key) {
-        return CryptoJS.AES.decrypt(endryptedData, key, {
-            format: JsonFormatter
-        }).toString(CryptoJS.enc.Utf8);
+    /**
+     * Decrypts an encrypted text using AES decryption.
+     * @param {string} encryptedData - The encrypted text.
+     * @param {string} key - The decryption key.
+     * @returns {Promise<string>} - A promise that resolves to the decrypted text.
+     */
+    async decrypt(encryptedData, key) {
+        // Perform AES decryption and convert the result to a UTF-8 string
+        return CryptoJS.AES.decrypt(encryptedData, key, { format: JsonFormatter }).toString(CryptoJS.enc.Utf8);
     }
 }
 

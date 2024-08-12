@@ -1,6 +1,6 @@
-import {Web3} from "web3";
+import { Web3 } from "web3";
 import Keystorage from "./modules/Keystorage.mjs";
-import {createConnector} from "@wagmi/core";
+import { createConnector } from "@wagmi/core";
 import EventEmitter from 'events';
 import ClientPageRPC from "./modules/ClientPageRPC.mjs";
 import FrontendWindows from "./modules/FrontendWindows.mjs";
@@ -8,8 +8,7 @@ import FrontendWindows from "./modules/FrontendWindows.mjs";
 const SERVICE_WORKER_URL = '/dist/service-worker.js';
 const FIRST_ENDPOINT = 'https://cloudflare-eth.com';
 
-
-//The RPCied version of the class
+// The RPCied version of the class
 class EmbeddedWallet extends EventEmitter {
     constructor(urlOrProvider) {
         super();
@@ -41,7 +40,6 @@ class EmbeddedWallet extends EventEmitter {
                     await this.changeProvider(this.urlOrProvider);
                 }
 
-
                 return this.RPC;
 
             } catch (error) {
@@ -53,7 +51,8 @@ class EmbeddedWallet extends EventEmitter {
     }
 
     async changeProvider(urlOrProvider) {
-        //console.log('!!!changeProvider', urlOrProvider);
+        // Ensure the new provider URL is validated and sanitized
+        // console.log('!!!changeProvider', urlOrProvider);
         this.urlOrProvider = urlOrProvider;
         return await this.RPC.request('changeProvider', [urlOrProvider]);
     }
@@ -67,6 +66,7 @@ class EmbeddedWallet extends EventEmitter {
     }
 
     async getBalance(address) {
+        // Validate and sanitize address before passing to the RPC request
         return await this.RPC.request('getBalance', [address]);
     }
 
@@ -83,6 +83,7 @@ class EmbeddedWallet extends EventEmitter {
     }
 
     async changeAccountPassword(oldPassword, newPassword) {
+        // Consider implementing additional verification for password change
         return await this.RPC.request('changeAccountPassword', [oldPassword, newPassword]);
     }
 
@@ -91,6 +92,7 @@ class EmbeddedWallet extends EventEmitter {
     }
 
     async setEncryptedAccount(encryptedKey, password, accountName = 'mainAccount') {
+        // Ensure that encrypted keys and passwords are handled securely
         return await this.RPC.request('setEncryptedAccount', [encryptedKey, password, accountName]);
     }
 
@@ -99,6 +101,7 @@ class EmbeddedWallet extends EventEmitter {
     }
 
     async loadAccountByPrivateKey(privateKey, password = '', accountName = 'mainAccount') {
+        // Ensure private key and password are handled securely
         return await this.RPC.request('loadAccountByPrivateKey', [privateKey, password, accountName]);
     }
 
@@ -118,16 +121,14 @@ class EmbeddedWallet extends EventEmitter {
         return await this.RPC.request('unlock', [password]);
     }
 
-
     async personal_sign(message, address) {
-
-        console.log('REquest personal sign', message, address);
+        console.log('Request personal sign', message, address);
 
         let isLocked = await this.isLocked();
 
         console.log('isLocked', isLocked);
 
-        this.emit('personal_sign_request', {message, address});
+        this.emit('personal_sign_request', { message, address });
 
         try {
             await new Promise((resolve, reject) => {
@@ -149,11 +150,10 @@ class EmbeddedWallet extends EventEmitter {
         }
     }
 
-    async eth_sendTransaction({data, from, to}) {
-
+    async eth_sendTransaction({ data, from, to }) {
         let isLocked = await this.isLocked();
 
-        this.emit('eth_sendTransaction_request', {data, from, to});
+        this.emit('eth_sendTransaction_request', { data, from, to });
 
         try {
             const tx = await new Promise((resolve, reject) => {
@@ -167,7 +167,7 @@ class EmbeddedWallet extends EventEmitter {
                 await this.unlock(await FrontendWindows.requestPassword(this));
             }
 
-            return await this.RPC.request('eth_sendTransaction', [{data, from, to}]);
+            return await this.RPC.request('eth_sendTransaction', [{ data, from, to }]);
         } catch (error) {
             console.error('Error during transaction send:', error);
             throw error;
@@ -187,7 +187,11 @@ export default EmbeddedWallet;
 
 let wallet = new EmbeddedWallet(null);
 
-wallet.init(); //TODO я хуй знает куда это вставить в асинхронном режиме, так что будет такой костыль, надеюсь будет работать
+wallet.init().then(() => {
+    // Initialization completed
+}).catch(error => {
+    console.error('Initialization error:', error);
+});
 
 if (typeof window !== 'undefined') {
     if (!window.web310101Wallet) {
@@ -197,24 +201,16 @@ if (typeof window !== 'undefined') {
     }
 }
 
-
-export function embedded10101WalletConnector({
-                                                 network,
-                                                 chains,
-                                                 options
-                                             }) {
+export function embedded10101WalletConnector({ network, chains, options }) {
     console.log('embedded10101WalletConnector', network, chains, options);
     console.log(network.rpcUrls.default.http);
     //let wallet = new EmbeddedWallet(network.rpcUrls.default.http[0]);
-
 
     let id = 'embedded10101';
     let name = 'Embedded 10101';
     let type = 'wallet';
 
-
     return createConnector((config) => {
-
         return {
             id,
             name,
@@ -222,7 +218,7 @@ export function embedded10101WalletConnector({
             getProvider: async function () {
                 return wallet;
             },
-            connect: async function ({isReconnecting}) {
+            connect: async function ({ isReconnecting }) {
                 await wallet.init();
                 await wallet.changeProvider(network.rpcUrls.default.http[0]);
 
@@ -232,9 +228,6 @@ export function embedded10101WalletConnector({
                         chainId: await wallet.eth_chainId()
                     };
                 }
-
-
-
 
                 try {
                     if (await wallet.hasSavedAccount()) {
@@ -258,7 +251,7 @@ export function embedded10101WalletConnector({
                     } else {
                         wallet.emit('account_action_request');
 
-                        const {action, privateKey, password} = await new Promise((resolve, reject) => {
+                        const { action, privateKey, password } = await new Promise((resolve, reject) => {
                             wallet.once('account_action_provided', resolve);
                             wallet.once('account_action_rejected', () => {
                                 reject(new Error('User rejected the account action request.'));
@@ -289,6 +282,7 @@ export function embedded10101WalletConnector({
                 return [await wallet.getAddress()];
             },
             onConnect: async function () {
+                // Implement any actions to be performed on connect
             },
             disconnect: async function () {
                 await wallet.removeEncryptedAccount();
@@ -301,19 +295,20 @@ export function embedded10101WalletConnector({
                 return await wallet.isAuthorized();
             },
             onDisconnect: async function () {
+                // Implement any actions to be performed on disconnect
             },
             getChainId: async function () {
                 return await wallet.eth_chainId();
             },
             onAccountsChanged: async function () {
+                // Implement actions for account changes
             },
             onMessage: async function () {
                 console.log('onMessage', arguments);
             },
             switchChain: async function () {
-
+                // Implement chain switching if necessary
             }
-
-        }
-    })
+        };
+    });
 }
